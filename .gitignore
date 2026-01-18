@@ -1,0 +1,5 @@
+.env
+github-stats-server
+main
+debug_*.go
+*.bak

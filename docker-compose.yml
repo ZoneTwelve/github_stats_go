@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  github-stats-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: github-readme-stats
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - PORT=3000
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - PAT_1=${PAT_1}
+      - CACHE_SECONDS=${CACHE_SECONDS:-3600}
+      - DEBUG=${DEBUG:-false}
+      - WHITELIST=${WHITELIST:-}
+      - EXCLUDE_REPO=${EXCLUDE_REPO:-}
+    volumes:
+      # Mount for development - remove in production
+      - ./logs:/app/logs:rw
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - github-stats-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Development override service (use with: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up)
+  github-stats-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: github-stats-dev
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - PORT=3000
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - PAT_1=${PAT_1}
+      - CACHE_SECONDS=60  # Shorter cache for development
+      - DEBUG=true
+    volumes:
+      - .:/app:rw  # Mount source code for live reload
+      - /app/go.mod  # Prevent overwriting go.mod
+      - /app/go.sum  # Prevent overwriting go.sum
+      - go-cache:/go/pkg/mod  # Cache Go modules
+      - go-build-cache:/root/.cache/go-build  # Cache Go build
+    command: go run main.go
+    networks:
+      - github-stats-network
+
+networks:
+  github-stats-network:
+    driver: bridge
+    name: github-stats-net
+
+volumes:
+  go-cache:
+    driver: local
+  go-build-cache:
+    driver: local
