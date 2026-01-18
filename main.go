@@ -245,8 +245,9 @@ type UserLanguages struct {
 }
 
 var (
-	githubToken = os.Getenv("GITHUB_TOKEN")
-	port        = getEnv("PORT", "3000")
+	githubToken  = os.Getenv("GITHUB_TOKEN")
+	port         = getEnv("PORT", "3000")
+	cacheSeconds = getEnv("CACHE_SECONDS", "86400") // default 1 day
 )
 
 // getEnv gets environment variable with default value
@@ -659,7 +660,7 @@ func statsHandler(w http.ResponseWriter, r *http.Request) {
 	svg := generateStatsCard(stats)
 
 	w.Header().Set("Content-Type", "image/svg+xml")
-	w.Header().Set("Cache-Control", "public, max-age=3600") // Cache for 1 hour
+	w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%s", cacheSeconds))
 
 	fmt.Fprint(w, svg)
 }
@@ -693,7 +694,7 @@ func topReposHandler(w http.ResponseWriter, r *http.Request) {
 	svg := generateReposCard(username, repos)
 
 	w.Header().Set("Content-Type", "image/svg+xml")
-	w.Header().Set("Cache-Control", "public, max-age=3600")
+	w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%s", cacheSeconds))
 
 	fmt.Fprint(w, svg)
 }
@@ -720,7 +721,7 @@ func languagesHandler(w http.ResponseWriter, r *http.Request) {
 	svg := generateLanguagesCard(languages)
 
 	w.Header().Set("Content-Type", "image/svg+xml")
-	w.Header().Set("Cache-Control", "public, max-age=3600")
+	w.Header().Set("Cache-Control", fmt.Sprintf("public, max-age=%s", cacheSeconds))
 
 	fmt.Fprint(w, svg)
 }
@@ -1008,6 +1009,9 @@ func main() {
 	}
 	if p := os.Getenv("PORT"); p != "" {
 		port = p
+	}
+	if timeout := os.Getenv("CACHE_SECONDS"); timeout != "" {
+		cacheSeconds = timeout
 	}
 
 	// Load templates

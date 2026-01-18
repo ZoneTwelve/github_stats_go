@@ -91,6 +91,7 @@ Open in your browser:
 | `GITHUB_TOKEN` | GitHub Personal Access Token | None (rate limited) |
 | `PAT_1` | Alternative token variable | None |
 | `PORT` | Server port | `3000` |
+| `CACHE_SECONDS` | Cache duration in seconds (max-age) | `86400` |
 
 ### GitHub Token Setup
 
